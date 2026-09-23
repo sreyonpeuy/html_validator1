@@ -18,15 +18,20 @@ def validate_html(html):
     stack = []
     for tag in tags:
         if tag.startswith('</'):
-            tag_name = tag[2:-1].strip()
+            parts = tag[2:-1].split()
+            if not parts:
+                return False
+            tag_name = parts.pop(0)
+
             if not stack or stack[-1] != tag_name:
                 return False
             stack.pop()
         else:
-            tag_content = tag[1:-1].strip()
-            tag_name = tag_content.split()[0]
+            parts = tag[1:-1].split()
+            if not parts:
+                return False
+            tag_name = parts.pop(0)
             stack.append(tag_name)
-
     return len(stack) == 0
 
 
@@ -44,21 +49,22 @@ def _extract_tags(html):
     tags = []
     current_tag = ""
     inside_tag = False
+
     for char in html:
         if char == "<":
             if inside_tag:
                 raise ValueError('found < without matching >')
             inside_tag = True
-            current_tag.append(char)
+            current_tag = "<"
         elif char == ">":
             if not inside_tag:
                 continue
-            current_tag.append(char)
-            tags.append("".join(current_tag))
-            current_tag = []
+            current_tag += ">"
+            tags.append(current_tag)
+            current_tag = ""
             inside_tag = False
         elif inside_tag:
-            current_tag.append(char)
+            current_tag += char
 
     if inside_tag:
         raise ValueError('found < without matching >')
